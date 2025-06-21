@@ -197,10 +197,7 @@ class TestIntegration:
         # Test Hebrew question asking for summary
         response = client.post(
             "/api/chat",
-            json={
-                "message": "תן לי סיכום של המסמך בעברית",
-                "session_id": session_id
-            },
+            json={"message": "תן לי סיכום של המסמך בעברית", "session_id": session_id},
         )
         assert response.status_code == 200
         summary_response = response.json()
@@ -349,10 +346,7 @@ class TestIntegration:
 
         response2_follow = client.post(
             "/api/chat",
-            json={
-                "message": "What are its applications?",
-                "session_id": session2_id
-            },
+            json={"message": "What are its applications?", "session_id": session2_id},
         )
         assert response2_follow.status_code == 200
         assert response2_follow.json()["session_id"] == session2_id
@@ -361,9 +355,7 @@ class TestIntegration:
     def test_mode_switching(self, client, sample_text_document):
         """Test switching between direct chat and RAG modes."""
         # Start with direct chat (no documents)
-        response = client.post(
-            "/api/chat", json={"message": "Hello, what can you do?"}
-        )
+        response = client.post("/api/chat", json={"message": "Hello, what can you do?"})
         assert response.status_code == 200
         direct_data = response.json()
         assert direct_data["success"] is True

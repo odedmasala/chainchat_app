@@ -134,8 +134,10 @@ def mock_openai_for_tests():
                             "with questions and have conversations."
                         )
                     )
-                return ("Hello! I'm an AI assistant. I can help you with "
-                        "questions and have conversations.")
+                return (
+                    "Hello! I'm an AI assistant. I can help you with "
+                    "questions and have conversations."
+                )
 
             mock_conv_instance.predict = mock_predict
             return mock_conv_instance

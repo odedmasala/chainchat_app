@@ -207,8 +207,8 @@ class ChatService:
                         "unless specifically asked otherwise\n"
                         "2. If the question is in English, respond in English "
                         "unless asked otherwise\n"
-                        "3. If the question refers to \"the file\", \"the document\", "
-                        "\"הקובץ\", \"המסמך\", it refers to the uploaded document(s)\n"
+                        '3. If the question refers to "the file", "the document", '
+                        '"הקובץ", "המסמך", it refers to the uploaded document(s)\n'
                         "4. Maintain conversation context across different languages\n"
                         "5. When switching languages, acknowledge the previous "
                         "conversation context\n\n"
@@ -232,41 +232,30 @@ class ChatService:
                 enhanced_question = question
 
                 if any(
-                    word in question
-                    for word in ["הקובץ", "המסמך", "הטקסט", "המידע"]
+                    word in question for word in ["הקובץ", "המסמך", "הטקסט", "המידע"]
                 ):
-                    enhanced_question = (
-                        f"בהתבסס על המסמך שהועלה, {question}"
-                    )
+                    enhanced_question = f"בהתבסס על המסמך שהועלה, {question}"
                 elif "תסביר" in question and (
                     "בעברית" in question or len(question.split()) <= 3
                 ):
-                    enhanced_question = (
-                        "תסביר את התוכן של המסמך שהועלה בעברית"
-                    )
+                    enhanced_question = "תסביר את התוכן של המסמך שהועלה בעברית"
                 elif question.strip() in [
                     "תסביר על הקובץ בבקשה",
                     "תן לי סיכום",
                     "מה יש במסמך",
                 ]:
-                    enhanced_question = (
-                        f"בהתבסס על המסמך שהועלה, {question}"
-                    )
+                    enhanced_question = f"בהתבסס על המסמך שהועלה, {question}"
                 elif any(
                     word in question.lower()
                     for word in ["the file", "the document", "this document"]
                 ):
-                    enhanced_question = (
-                        f"Based on the uploaded document, {question}"
-                    )
+                    enhanced_question = f"Based on the uploaded document, {question}"
                 elif question.lower().strip() in [
                     "explain in english",
                     "summarize this",
                     "what's in this",
                 ]:
-                    enhanced_question = (
-                        f"Based on the uploaded document, {question}"
-                    )
+                    enhanced_question = f"Based on the uploaded document, {question}"
 
                 result = qa_chain.invoke({"question": enhanced_question})
 
@@ -373,8 +362,7 @@ Your documents are ready - I just need API access to answer questions about them
                     self.documents, self.embeddings
                 )
                 print(
-                    f"✅ Vector store created with {self.embedding_type} "
-                    "embeddings"
+                    f"✅ Vector store created with {self.embedding_type} " "embeddings"
                 )
             except Exception as e:
                 if "quota" in str(e).lower() or "429" in str(e):
