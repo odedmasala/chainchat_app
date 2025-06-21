@@ -84,7 +84,8 @@ jobs:
 
       - name: Generate combined coverage report
         run: |
-          poetry run coverage combine
+          # Skip coverage combine since data is already combined via --cov-append
+          # poetry run coverage combine
           poetry run coverage xml -o coverage-combined.xml
           poetry run coverage html -d htmlcov-combined/
           poetry run coverage report --show-missing
