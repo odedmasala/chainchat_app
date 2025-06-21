@@ -20,7 +20,8 @@ dependencies = [
     "pydantic-settings (>=2.7.0,<3.0.0)",
     "pypdf (>=4.0.0,<5.0.0)",
     "PyMuPDF (>=1.23.0,<2.0.0)",
-    "sentence-transformers (>=2.2.2,<3.0.0)"
+    "sentence-transformers (>=2.2.2,<3.0.0)",
+    "h11 (>=0.16.0,<1.0.0)"
 ]
 
 [tool.poetry]
@@ -42,7 +43,7 @@ pytest = "^7.4.0"
 pytest-asyncio = "^0.21.0"
 pytest-cov = "^4.1.0"
 pytest-mock = "^3.11.0"
-httpx = "^0.24.1"
+httpx = "^0.28.0"
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -59,4 +60,5 @@ pydantic-settings = "^2.7.0"
 pypdf = "^4.0.0"
 PyMuPDF = "^1.23.0"
 sentence-transformers = "^2.2.2"
+h11 = "^0.16.0"
 
