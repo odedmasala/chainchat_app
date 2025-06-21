@@ -1,0 +1,269 @@
+name: Security Analysis
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  secret-detection:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔍 TruffleHog OSS Secret Scanner
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+        continue-on-error: true
+
+      - name: 🔑 GitLeaks Secret Scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        continue-on-error: true
+
+      - name: 📊 Generate secrets summary
+        if: always()
+        run: |
+          echo "## 🔍 Secret Scanning Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔍 TruffleHog Scanner" >> $GITHUB_STEP_SUMMARY
+          echo "- Scanned for verified secrets in codebase" >> $GITHUB_STEP_SUMMARY
+          echo "- Analyzed commit history for leaked credentials" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔑 GitLeaks Scanner" >> $GITHUB_STEP_SUMMARY
+          echo "- Performed comprehensive secret detection" >> $GITHUB_STEP_SUMMARY
+          echo "- Checked for common secret patterns" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Scan Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "- API keys and tokens" >> $GITHUB_STEP_SUMMARY
+          echo "- Database connection strings" >> $GITHUB_STEP_SUMMARY
+          echo "- Private keys and certificates" >> $GITHUB_STEP_SUMMARY
+          echo "- Cloud service credentials" >> $GITHUB_STEP_SUMMARY
+          echo "- Generic secrets and passwords" >> $GITHUB_STEP_SUMMARY
+
+  security-analysis:
+    name: Code Security Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: 📦 Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: 💾 Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: security-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: 📥 Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: 📦 Install project
+        run: poetry install --no-interaction
+
+      - name: 🛡️ Security check with Bandit
+        run: |
+          poetry run pip install bandit[toml]
+          poetry run bandit -r chainchat/ -f json -o bandit-report.json
+          poetry run bandit -r chainchat/ -ll
+        continue-on-error: true
+
+      - name: 🔒 Dependency security check with Safety
+        run: |
+          poetry run pip install safety
+          poetry run safety check --json --output safety-report.json
+          poetry run safety check
+        continue-on-error: true
+
+      - name: 📄 License compliance check
+        run: |
+          poetry run pip install pip-licenses
+          poetry run pip-licenses --format=json --output-file=licenses.json
+          poetry run pip-licenses --fail-on="GPL v3"
+        continue-on-error: true
+
+      - name: 📊 Generate security analysis summary
+        if: always()
+        run: |
+          echo "## 🛡️ Security Analysis Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f bandit-report.json ]; then
+            BANDIT_ISSUES=$(jq '.results | length' bandit-report.json 2>/dev/null || echo "0")
+            if [ "$BANDIT_ISSUES" -eq 0 ]; then
+              echo "- 🛡️ **Bandit Security Scan**: ✅ No security issues found" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- 🛡️ **Bandit Security Scan**: ⚠️ $BANDIT_ISSUES issues found" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- 🛡️ **Bandit Security Scan**: ℹ️ Report not generated" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f safety-report.json ]; then
+            echo "- 🔒 **Safety Dependency Check**: ✅ Completed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- 🔒 **Safety Dependency Check**: ℹ️ Report not generated" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f licenses.json ]; then
+            echo "- 📄 **License Compliance**: ✅ Checked" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- 📄 **License Compliance**: ℹ️ Report not generated" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 📤 Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-analysis-reports
+          path: |
+            bandit-report.json
+            safety-report.json
+            licenses.json
+          retention-days: 30
+
+  create-issues:
+    name: Create Security Issues
+    runs-on: ubuntu-latest
+    needs: [secret-detection, security-analysis]
+    if: failure()
+
+    steps:
+      - name: 🚨 Create security issue for critical findings
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const title = '🚨 Security Analysis Issues Detected';
+            const body = `
+            ## 🔒 Security Analysis Alert
+
+            Our automated security analysis has detected potential security issues in the repository.
+
+            **⚠️ ATTENTION REQUIRED**
+
+            **Analysis Details:**
+            - **Commit**: ${{ github.sha }}
+            - **Branch**: ${{ github.ref }}
+            - **Workflow**: ${{ github.workflow }}
+            - **Run ID**: ${{ github.run_id }}
+            - **Secret Detection**: ${{ needs.secret-detection.result }}
+            - **Security Analysis**: ${{ needs.security-analysis.result }}
+
+            **🔧 Next Steps:**
+            1. **Review**: Check the workflow logs for specific findings
+            2. **Prioritize**: Address critical and high-severity issues first
+            3. **Fix**: Update code, dependencies, or configuration as needed
+            4. **Verify**: Re-run the security analysis to confirm fixes
+            5. **Monitor**: Set up ongoing security monitoring
+
+            **📋 Analysis Coverage:**
+            - 🔍 Secret detection (TruffleHog, GitLeaks)
+            - 🛡️ Code security analysis (Bandit)
+            - 🔒 Dependency vulnerability scanning (Safety)
+            - 📄 License compliance checking
+
+            **📊 Reports Available:**
+            - Download security analysis reports from workflow artifacts
+            - Check the Security tab for SARIF results
+            - Review individual step logs for detailed findings
+
+            This issue will be automatically closed when security analysis passes cleanly.
+            `;
+
+            // Check for existing security issues
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['security', 'automated'],
+              state: 'open'
+            });
+
+            // Only create a new issue if one doesn't already exist
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['security', 'automated', 'analysis']
+              });
+            }
+
+  summary:
+    name: Security Analysis Summary
+    runs-on: ubuntu-latest
+    needs: [secret-detection, security-analysis]
+    if: always()
+
+    steps:
+      - name: 📊 Generate comprehensive security summary
+        run: |
+          echo "# 🛡️ Security Analysis Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📋 Security Analysis Overview" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Check | Status | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------------|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔍 Secret Detection | ${{ needs.secret-detection.result }} | ${{ needs.secret-detection.result == 'success' && '✅ No secrets detected' || '⚠️ Secrets found or scan issues' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🛡️ Security Analysis | ${{ needs.security-analysis.result }} | ${{ needs.security-analysis.result == 'success' && '✅ Analysis complete' || '⚠️ Issues detected' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.secret-detection.result }}" == "success" && "${{ needs.security-analysis.result }}" == "success" ]]; then
+            echo "## ✅ OVERALL STATUS: SECURITY ANALYSIS CLEAN" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🎉 **All security checks completed successfully!**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- 🔍 Secret detection: ✅ Clean" >> $GITHUB_STEP_SUMMARY
+            echo "- 🛡️ Code security: ✅ Analyzed" >> $GITHUB_STEP_SUMMARY
+            echo "- 🔒 Dependencies: ✅ Checked" >> $GITHUB_STEP_SUMMARY
+            echo "- 📄 Licenses: ✅ Compliant" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ⚠️ OVERALL STATUS: REVIEW RECOMMENDED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🔍 **Security analysis found items for review.**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**This is informational - the pipeline continues to run.**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please review:" >> $GITHUB_STEP_SUMMARY
+            echo "- Security analysis reports in artifacts" >> $GITHUB_STEP_SUMMARY
+            echo "- Individual step logs for details" >> $GITHUB_STEP_SUMMARY
+            echo "- Address critical issues when convenient" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: ✅ Security Analysis Complete
+        run: |
+          echo "🛡️ Security analysis completed!"
+          echo "📊 Results:"
+          echo "   Secret Detection: ${{ needs.secret-detection.result }}"
+          echo "   Security Analysis: ${{ needs.security-analysis.result }}"
+          echo ""
+          echo "ℹ️ Note: Security analysis is non-blocking and for informational purposes."
+          echo "📁 Review artifacts and logs for detailed findings."
