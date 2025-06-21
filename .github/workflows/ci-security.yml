@@ -148,7 +148,7 @@ jobs:
             echo "✅ No 'chmod 777' patterns found" >> security-patterns-audit.txt
           fi
 
-          if grep -r '\${{.*github\.event\.pull_request\..*}}' .github/workflows/; then
+          if grep -r 'github\.event\.pull_request' .github/workflows/; then
             echo "⚠️  WARNING: Found PR event usage (potential injection risk)" >> security-patterns-audit.txt
           else
             echo "✅ No direct PR event usage in run commands" >> security-patterns-audit.txt
