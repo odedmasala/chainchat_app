@@ -56,20 +56,20 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🐳 Build and scan Docker image
+      - name: Build and scan Docker image
         run: |
           if [ -f Dockerfile ]; then
-            echo "🔨 Building Docker image..."
+            echo "Building Docker image..."
             docker build -t chainchat-app:latest .
             
-            echo "🔍 Scanning Docker image for vulnerabilities..."
+            echo "Scanning Docker image for vulnerabilities..."
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
               aquasec/trivy image chainchat-app:latest
           else
-            echo "⚠️ No Dockerfile found, skipping Docker security scan"
+            echo "WARNING: No Dockerfile found, skipping Docker security scan"
           fi
 
   final-summary:
@@ -87,70 +87,70 @@ jobs:
     if: always()
 
     steps:
-      - name: 📊 Generate comprehensive summary
+      - name: Generate comprehensive summary
         run: |
-          echo "# 🛡️ Security Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "# Security Pipeline Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📋 Pipeline Status Overview" >> $GITHUB_STEP_SUMMARY
+          echo "## Pipeline Status Overview" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Component | Status | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|--------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 🧪 Code Quality & Testing | ${{ needs.code-quality.result }} | ${{ needs.code-quality.result == 'success' && '✅ Unit & Integration tests passed' || '❌ Tests or quality checks failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🛡️ Security Analysis | ${{ needs.security-scan.result }} | ${{ needs.security-scan.result == 'success' && '✅ No security issues' || '⚠️ Attention required' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔍 Vulnerability Scanning | ${{ needs.vulnerability-scan.result }} | ${{ needs.vulnerability-scan.result == 'success' && '✅ No vulnerabilities' || '⚠️ Issues found' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔐 Secret Detection | ${{ needs.secret-scan.result }} | ${{ needs.secret-scan.result == 'success' && '✅ No secrets found' || '🚨 Secrets detected' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔧 CI/CD Security | ${{ needs.ci-security.result }} | ${{ needs.ci-security.result == 'success' && '✅ Workflows secure' || '⚠️ Issues found' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🐳 Docker Security | ${{ needs.docker-security.result }} | ${{ needs.docker-security.result == 'success' && '✅ Docker secure' || needs.docker-security.result == 'skipped' && '⏭️ Skipped' || '⚠️ Issues found' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Quality & Testing | ${{ needs.code-quality.result }} | ${{ needs.code-quality.result == 'success' && 'PASS: Unit & Integration tests passed' || 'FAIL: Tests or quality checks failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Analysis | ${{ needs.security-scan.result }} | ${{ needs.security-scan.result == 'success' && 'PASS: No security issues' || 'WARN: Attention required' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Vulnerability Scanning | ${{ needs.vulnerability-scan.result }} | ${{ needs.vulnerability-scan.result == 'success' && 'PASS: No vulnerabilities' || 'WARN: Issues found' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Detection | ${{ needs.secret-scan.result }} | ${{ needs.secret-scan.result == 'success' && 'PASS: No secrets found' || 'ALERT: Secrets detected' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| CI/CD Security | ${{ needs.ci-security.result }} | ${{ needs.ci-security.result == 'success' && 'PASS: Workflows secure' || 'WARN: Issues found' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Security | ${{ needs.docker-security.result }} | ${{ needs.docker-security.result == 'success' && 'PASS: Docker secure' || needs.docker-security.result == 'skipped' && 'SKIP: Skipped' || 'WARN: Issues found' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [[ "${{ needs.code-quality.result }}" == "success" && "${{ needs.security-scan.result }}" == "success" && "${{ needs.vulnerability-scan.result }}" == "success" && "${{ needs.secret-scan.result }}" == "success" && "${{ needs.ci-security.result }}" == "success" ]]; then
-            echo "## ✅ OVERALL STATUS: SECURE & READY" >> $GITHUB_STEP_SUMMARY
+            echo "## OVERALL STATUS: SECURE & READY" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "🎉 **All security checks passed successfully!**" >> $GITHUB_STEP_SUMMARY
+            echo "**All security checks passed successfully!**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "- 🧪 Unit & Integration tests: ✅ Passed" >> $GITHUB_STEP_SUMMARY
-            echo "- 🎨 Code quality checks: ✅ Passed" >> $GITHUB_STEP_SUMMARY
-            echo "- 🛡️ Security analysis: ✅ Clean" >> $GITHUB_STEP_SUMMARY
-            echo "- 🔍 Vulnerability scanning: ✅ Secure" >> $GITHUB_STEP_SUMMARY
-            echo "- 🔐 Secret detection: ✅ No leaks" >> $GITHUB_STEP_SUMMARY
-            echo "- 🔧 CI/CD security: ✅ Validated" >> $GITHUB_STEP_SUMMARY
-            echo "- 📦 Dependencies: ✅ Safe" >> $GITHUB_STEP_SUMMARY
+            echo "- Unit & Integration tests: PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "- Code quality checks: PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "- Security analysis: CLEAN" >> $GITHUB_STEP_SUMMARY
+            echo "- Vulnerability scanning: SECURE" >> $GITHUB_STEP_SUMMARY
+            echo "- Secret detection: NO LEAKS" >> $GITHUB_STEP_SUMMARY
+            echo "- CI/CD security: VALIDATED" >> $GITHUB_STEP_SUMMARY
+            echo "- Dependencies: SAFE" >> $GITHUB_STEP_SUMMARY
           else
-            echo "## ⚠️ OVERALL STATUS: ATTENTION REQUIRED" >> $GITHUB_STEP_SUMMARY
+            echo "## OVERALL STATUS: ATTENTION REQUIRED" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "🔍 **Some security checks require attention.**" >> $GITHUB_STEP_SUMMARY
+            echo "**Some security checks require attention.**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Please review the individual workflow results and address any issues found." >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "📋 **Review Guidelines:**" >> $GITHUB_STEP_SUMMARY
+            echo "**Review Guidelines:**" >> $GITHUB_STEP_SUMMARY
             echo "- Check each failed/warning component above" >> $GITHUB_STEP_SUMMARY
             echo "- Download and review security reports from artifacts" >> $GITHUB_STEP_SUMMARY
             echo "- Address critical and high-severity issues first" >> $GITHUB_STEP_SUMMARY
             echo "- Re-run the pipeline after fixes" >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: ✅ Success notification
+      - name: Success notification
         if: ${{ needs.code-quality.result == 'success' && needs.security-scan.result == 'success' && needs.vulnerability-scan.result == 'success' && needs.secret-scan.result == 'success' && needs.ci-security.result == 'success' }}
         run: |
-          echo "🎉 SUCCESS: All security pipeline checks passed!"
-          echo "✅ Unit & Integration Tests: PASSED"
-          echo "✅ Code Quality: PASSED"
-          echo "✅ Security Analysis: CLEAN"  
-          echo "✅ Vulnerability Scan: SECURE"
-          echo "✅ Secret Detection: NO LEAKS"
-          echo "✅ CI/CD Security: VALIDATED"
-          echo "🚀 Repository is secure and ready for deployment!"
+          echo "SUCCESS: All security pipeline checks passed!"
+          echo "Unit & Integration Tests: PASSED"
+          echo "Code Quality: PASSED"
+          echo "Security Analysis: CLEAN"  
+          echo "Vulnerability Scan: SECURE"
+          echo "Secret Detection: NO LEAKS"
+          echo "CI/CD Security: VALIDATED"
+          echo "Repository is secure and ready for deployment!"
 
-      - name: ❌ Failure notification
+      - name: Failure notification
         if: ${{ needs.code-quality.result != 'success' || needs.security-scan.result != 'success' || needs.vulnerability-scan.result != 'success' || needs.secret-scan.result != 'success' || needs.ci-security.result != 'success' }}
         run: |
-          echo "⚠️ PIPELINE FAILED: Security issues detected!"
-          echo "📊 Results Summary:"
+          echo "PIPELINE FAILED: Security issues detected!"
+          echo "Results Summary:"
           echo "   Code Quality: ${{ needs.code-quality.result }}"
           echo "   Security Scan: ${{ needs.security-scan.result }}"
           echo "   Vulnerability Scan: ${{ needs.vulnerability-scan.result }}"
           echo "   Secret Detection: ${{ needs.secret-scan.result }}"
           echo "   CI/CD Security: ${{ needs.ci-security.result }}"
           echo ""
-          echo "🔍 Please review the individual workflow logs and address issues before proceeding."
+          echo "Please review the individual workflow logs and address issues before proceeding."
           exit 1
