@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from chainchat.main import app
 
 
+@pytest.mark.integration
 class TestIntegration:
     """Integration tests for the ChainChat application."""
 
