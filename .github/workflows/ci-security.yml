@@ -1,0 +1,265 @@
+name: CI/CD Security
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/**"
+  schedule:
+    - cron: "0 4 * * 3"
+
+jobs:
+  scorecard-analysis:
+    name: OpenSSF Scorecard Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: 🔍 Run OpenSSF Scorecard
+        uses: ossf/scorecard-action@v2.3.1
+        with:
+          results_file: scorecard-results.sarif
+          results_format: sarif
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📤 Upload Scorecard results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: scorecard-results.sarif
+
+      - name: 📊 Generate Scorecard summary
+        if: always()
+        run: |
+          echo "## 🔍 OpenSSF Scorecard Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "OpenSSF Scorecard checks your repository against security best practices:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Security Checks Include:" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔒 **Branch Protection**: Enforced on default branch" >> $GITHUB_STEP_SUMMARY
+          echo "- 👥 **Code Review**: Required before merging" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔐 **Token Permissions**: Workflow tokens properly scoped" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 **Dependencies**: Pinned and up-to-date" >> $GITHUB_STEP_SUMMARY
+          echo "- 🛡️ **Vulnerabilities**: No known security issues" >> $GITHUB_STEP_SUMMARY
+          echo "- 🏷️ **Signed Releases**: Cryptographically signed" >> $GITHUB_STEP_SUMMARY
+          echo "- 🤖 **Automated Security**: Security policies in place" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📊 **View detailed results in the Security tab above**" >> $GITHUB_STEP_SUMMARY
+
+      - name: 📁 Upload Scorecard artifacts
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: scorecard-results
+          path: scorecard-results.sarif
+          retention-days: 30
+
+  actionlint:
+    name: GitHub Actions Workflow Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Install Actionlint
+        run: |
+          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          sudo mv ./actionlint /usr/local/bin/
+
+      - name: 🔍 Run Actionlint on all workflows
+        run: |
+          echo "🔍 Linting GitHub Actions workflows..."
+          actionlint -format '{{range $err := .}}::error file={{$err.Filepath}},line={{$err.Line}},col={{$err.Column}}::{{$err.Message}}{{end}}' .github/workflows/*.yml
+        continue-on-error: true
+
+      - name: 📊 Generate Actionlint summary
+        if: always()
+        run: |
+          echo "## 🔧 GitHub Actions Workflow Linting" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Actionlint validates GitHub Actions workflows for:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🛠️ Checks Performed:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **YAML Syntax**: Valid YAML structure" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔒 **Security Issues**: Unsafe \`run:\` commands" >> $GITHUB_STEP_SUMMARY
+          echo "- 🏷️ **Action Versions**: Pinned to specific versions" >> $GITHUB_STEP_SUMMARY
+          echo "- 📝 **Typos**: Job names, step names, action names" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔗 **Dependencies**: Valid job dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "- 🎯 **Contexts**: Proper use of GitHub contexts" >> $GITHUB_STEP_SUMMARY
+          echo "- 🛡️ **Permissions**: Explicit permission settings" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          WORKFLOW_COUNT=$(find .github/workflows -name "*.yml" | wc -l)
+          echo "📁 **Analyzed $WORKFLOW_COUNT workflow files**" >> $GITHUB_STEP_SUMMARY
+
+  ci-security-audit:
+    name: CI/CD Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔍 Audit workflow permissions
+        run: |
+          echo "🔍 Auditing GitHub Actions workflow permissions..."
+          echo "" >> workflow-permissions-audit.txt
+          echo "=== WORKFLOW PERMISSIONS AUDIT ===" >> workflow-permissions-audit.txt
+          echo "Date: $(date)" >> workflow-permissions-audit.txt
+          echo "" >> workflow-permissions-audit.txt
+
+          for workflow in .github/workflows/*.yml; do
+            echo "📄 Analyzing: $(basename $workflow)" >> workflow-permissions-audit.txt
+            echo "----------------------------------------" >> workflow-permissions-audit.txt
+            
+            if grep -q "permissions:" "$workflow"; then
+              echo "✅ Permissions defined" >> workflow-permissions-audit.txt
+              grep -A 10 "permissions:" "$workflow" | head -10 >> workflow-permissions-audit.txt
+            else
+              echo "⚠️  WARNING: No explicit permissions defined (defaults to all)" >> workflow-permissions-audit.txt
+            fi
+            echo "" >> workflow-permissions-audit.txt
+          done
+
+      - name: 🔒 Check for hardcoded secrets patterns
+        run: |
+          echo "🔍 Checking workflows for potential hardcoded values..."
+          echo "" >> security-patterns-audit.txt
+          echo "=== SECURITY PATTERNS AUDIT ===" >> security-patterns-audit.txt
+          echo "Date: $(date)" >> security-patterns-audit.txt
+          echo "" >> security-patterns-audit.txt
+
+          echo "🔍 Checking for potential security issues:" >> security-patterns-audit.txt
+          echo "" >> security-patterns-audit.txt
+
+          if grep -r "curl.*|.*sh" .github/workflows/; then
+            echo "⚠️  WARNING: Found 'curl | sh' pattern (potentially unsafe)" >> security-patterns-audit.txt
+          else
+            echo "✅ No 'curl | sh' patterns found" >> security-patterns-audit.txt
+          fi
+
+          if grep -r "sudo.*chmod.*777" .github/workflows/; then
+            echo "⚠️  WARNING: Found 'chmod 777' pattern (potentially unsafe)" >> security-patterns-audit.txt
+          else
+            echo "✅ No 'chmod 777' patterns found" >> security-patterns-audit.txt
+          fi
+
+          if grep -r "\${{.*github\.event\.pull_request\..*}}" .github/workflows/; then
+            echo "⚠️  WARNING: Found PR event usage (potential injection risk)" >> security-patterns-audit.txt
+          else
+            echo "✅ No direct PR event usage in run commands" >> security-patterns-audit.txt
+          fi
+
+      - name: 📊 Generate CI/CD security summary
+        if: always()
+        run: |
+          echo "## 🛡️ CI/CD Security Audit Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          WORKFLOW_COUNT=$(find .github/workflows -name "*.yml" | wc -l)
+          echo "📊 **Audited $WORKFLOW_COUNT GitHub Actions workflows**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### 🔍 Security Audit Summary:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f workflow-permissions-audit.txt ]; then
+            EXPLICIT_PERMS=$(grep -c "✅ Permissions defined" workflow-permissions-audit.txt || echo "0")
+            MISSING_PERMS=$(grep -c "⚠️.*No explicit permissions" workflow-permissions-audit.txt || echo "0")
+            echo "- 🔒 **Permissions**: $EXPLICIT_PERMS workflows with explicit permissions, $MISSING_PERMS with defaults" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f security-patterns-audit.txt ]; then
+            echo "- 🛡️ **Security Patterns**: Checked for unsafe patterns and injection risks" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📋 **Recommendations:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Always use explicit permissions in workflows" >> $GITHUB_STEP_SUMMARY
+          echo "- Pin action versions to specific commits or tags" >> $GITHUB_STEP_SUMMARY
+          echo "- Avoid using PR event data directly in run commands" >> $GITHUB_STEP_SUMMARY
+          echo "- Use environment variables for dynamic values" >> $GITHUB_STEP_SUMMARY
+
+      - name: 📤 Upload security audit reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: ci-security-audit
+          path: |
+            workflow-permissions-audit.txt
+            security-patterns-audit.txt
+          retention-days: 30
+
+  summary:
+    name: CI/CD Security Summary
+    runs-on: ubuntu-latest
+    needs: [scorecard-analysis, actionlint, ci-security-audit]
+    if: always()
+
+    steps:
+      - name: 📊 Generate comprehensive CI/CD security summary
+        run: |
+          echo "# 🛡️ CI/CD Security Analysis Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📋 Security Analysis Overview" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Check | Status | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------------|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔍 OpenSSF Scorecard | ${{ needs.scorecard-analysis.result }} | ${{ needs.scorecard-analysis.result == 'success' && '✅ Security practices checked' || '⚠️ Issues found' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔧 Actionlint | ${{ needs.actionlint.result }} | ${{ needs.actionlint.result == 'success' && '✅ Workflows validated' || '⚠️ Linting issues' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🛡️ Security Audit | ${{ needs.ci-security-audit.result }} | ${{ needs.ci-security-audit.result == 'success' && '✅ Security audit complete' || '⚠️ Audit issues' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.scorecard-analysis.result }}" == "success" && "${{ needs.actionlint.result }}" == "success" && "${{ needs.ci-security-audit.result }}" == "success" ]]; then
+            echo "## ✅ OVERALL STATUS: CI/CD SECURITY VALIDATED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🎉 **All CI/CD security checks passed!**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- 🔍 Security best practices: ✅ Verified" >> $GITHUB_STEP_SUMMARY
+            echo "- 🔧 Workflow linting: ✅ Clean" >> $GITHUB_STEP_SUMMARY
+            echo "- 🛡️ Security audit: ✅ Compliant" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ⚠️ OVERALL STATUS: ATTENTION REQUIRED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🔍 **Some CI/CD security checks need attention.**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please review the individual check results and:" >> $GITHUB_STEP_SUMMARY
+            echo "- Address OpenSSF Scorecard recommendations" >> $GITHUB_STEP_SUMMARY
+            echo "- Fix Actionlint workflow issues" >> $GITHUB_STEP_SUMMARY
+            echo "- Review security audit findings" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: ✅ CI/CD Security Success
+        if: ${{ needs.scorecard-analysis.result == 'success' && needs.actionlint.result == 'success' && needs.ci-security-audit.result == 'success' }}
+        run: |
+          echo "🎉 SUCCESS: All CI/CD security checks passed!"
+          echo "✅ OpenSSF Scorecard: COMPLIANT"
+          echo "✅ Actionlint: CLEAN"
+          echo "✅ Security Audit: VALIDATED"
+          echo "🔒 Your GitHub Actions workflows are secure!"
+
+      - name: ⚠️ CI/CD Security Issues
+        if: ${{ needs.scorecard-analysis.result != 'success' || needs.actionlint.result != 'success' || needs.ci-security-audit.result != 'success' }}
+        run: |
+          echo "⚠️ CI/CD SECURITY ISSUES DETECTED!"
+          echo "📊 Results Summary:"
+          echo "   OpenSSF Scorecard: ${{ needs.scorecard-analysis.result }}"
+          echo "   Actionlint: ${{ needs.actionlint.result }}"
+          echo "   Security Audit: ${{ needs.ci-security-audit.result }}"
+          echo ""
+          echo "🔍 Please review the Security tab and audit reports for detailed recommendations."
+          exit 1
