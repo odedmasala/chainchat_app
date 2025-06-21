@@ -3,16 +3,6 @@ name: CI/CD Security
 on:
   workflow_call:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/**"
-  pull_request:
-    branches: [main]
-    paths:
-      - ".github/workflows/**"
-  schedule:
-    - cron: "0 4 * * 3"
 
 jobs:
   scorecard-analysis:
@@ -158,7 +148,7 @@ jobs:
             echo "✅ No 'chmod 777' patterns found" >> security-patterns-audit.txt
           fi
 
-          if grep -r "\${{.*github\.event\.pull_request\..*}}" .github/workflows/; then
+          if grep -r '\${{.*github\.event\.pull_request\..*}}' .github/workflows/; then
             echo "⚠️  WARNING: Found PR event usage (potential injection risk)" >> security-patterns-audit.txt
           else
             echo "✅ No direct PR event usage in run commands" >> security-patterns-audit.txt

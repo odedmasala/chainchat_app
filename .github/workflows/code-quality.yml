@@ -3,20 +3,6 @@ name: Code Quality & Testing
 on:
   workflow_call:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "chainchat/**"
-      - "tests/**"
-      - "pyproject.toml"
-      - "poetry.lock"
-  pull_request:
-    branches: [main]
-    paths:
-      - "chainchat/**"
-      - "tests/**"
-      - "pyproject.toml"
-      - "poetry.lock"
 
 jobs:
   code-quality:
