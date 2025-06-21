@@ -1,7 +1,9 @@
 """
 Utility functions for API key management in tests.
 """
+
 import os
+
 import pytest
 
 
@@ -42,21 +44,17 @@ def has_all_api_keys() -> bool:
 
 # Pytest skip decorators
 skip_without_openai = pytest.mark.skipif(
-    not has_openai_api_key(),
-    reason="OpenAI API key not available"
+    not has_openai_api_key(), reason="OpenAI API key not available"
 )
 
 skip_without_huggingface = pytest.mark.skipif(
-    not has_huggingface_token(),
-    reason="Hugging Face token not available"
+    not has_huggingface_token(), reason="Hugging Face token not available"
 )
 
 skip_without_pinecone = pytest.mark.skipif(
-    not has_pinecone_api_key(),
-    reason="Pinecone API key not available"
+    not has_pinecone_api_key(), reason="Pinecone API key not available"
 )
 
 skip_without_all_apis = pytest.mark.skipif(
-    not has_all_api_keys(),
-    reason="One or more API keys not available"
-) 
+    not has_all_api_keys(), reason="One or more API keys not available"
+)

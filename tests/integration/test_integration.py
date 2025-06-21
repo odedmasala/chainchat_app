@@ -1,8 +1,9 @@
-import pytest
-import tempfile
 import os
-from fastapi.testclient import TestClient
+import tempfile
 from io import BytesIO
+
+import pytest
+from fastapi.testclient import TestClient
 
 from chainchat.main import app
 
@@ -89,9 +90,16 @@ class TestIntegration:
         assert initial_data["documents_loaded"] >= 0
 
         # 2. Upload a document
-        response = client.post("/api/upload", files={
-            "file": ("ai_document.txt", BytesIO(sample_text_document.encode()), "text/plain")
-        })
+        response = client.post(
+            "/api/upload",
+            files={
+                "file": (
+                    "ai_document.txt",
+                    BytesIO(sample_text_document.encode()),
+                    "text/plain",
+                )
+            },
+        )
         assert response.status_code == 200
         upload_data = response.json()
         assert upload_data["success"] is True
@@ -106,22 +114,28 @@ class TestIntegration:
         assert updated_data["total_chunks"] > 0
 
         # 4. Chat about the document (RAG mode)
-        response = client.post("/api/chat", json={
-            "message": "What is artificial intelligence?"
-        })
+        response = client.post(
+            "/api/chat", json={"message": "What is artificial intelligence?"}
+        )
         assert response.status_code == 200
         chat_data = response.json()
         assert chat_data["success"] is True
-        assert "artificial intelligence" in chat_data["answer"].lower() or "ai" in chat_data["answer"].lower()
+        assert (
+            "artificial intelligence" in chat_data["answer"].lower()
+            or "ai" in chat_data["answer"].lower()
+        )
         assert len(chat_data["sources"]) > 0
         assert "session_id" in chat_data
         session_id = chat_data["session_id"]
 
         # 5. Follow-up question in the same session
-        response = client.post("/api/chat", json={
-            "message": "What are the types of machine learning?",
-            "session_id": session_id
-        })
+        response = client.post(
+            "/api/chat",
+            json={
+                "message": "What are the types of machine learning?",
+                "session_id": session_id,
+            },
+        )
         assert response.status_code == 200
         follow_up_data = response.json()
         assert follow_up_data["success"] is True
@@ -145,27 +159,34 @@ class TestIntegration:
     def test_multilingual_workflow(self, client, sample_multilingual_document):
         """Test workflow with multilingual content including Hebrew."""
         # Upload multilingual document
-        response = client.post("/api/upload", files={
-            "file": ("multilingual.txt", BytesIO(sample_multilingual_document.encode()), "text/plain")
-        })
+        response = client.post(
+            "/api/upload",
+            files={
+                "file": (
+                    "multilingual.txt",
+                    BytesIO(sample_multilingual_document.encode()),
+                    "text/plain",
+                )
+            },
+        )
         assert response.status_code == 200
         upload_data = response.json()
         assert upload_data["success"] is True
 
         # Test English question
-        response = client.post("/api/chat", json={
-            "message": "What is this document about?"
-        })
+        response = client.post(
+            "/api/chat", json={"message": "What is this document about?"}
+        )
         assert response.status_code == 200
         english_response = response.json()
         assert english_response["success"] is True
         session_id = english_response["session_id"]
 
         # Test Hebrew question about the content
-        response = client.post("/api/chat", json={
-            "message": "מה זה בינה מלאכותית?",
-            "session_id": session_id
-        })
+        response = client.post(
+            "/api/chat",
+            json={"message": "מה זה בינה מלאכותית?", "session_id": session_id},
+        )
         assert response.status_code == 200
         hebrew_response = response.json()
         assert hebrew_response["success"] is True
@@ -173,10 +194,10 @@ class TestIntegration:
         assert hebrew_response["session_id"] == session_id
 
         # Test Hebrew question asking for summary
-        response = client.post("/api/chat", json={
-            "message": "תן לי סיכום של המסמך בעברית",
-            "session_id": session_id
-        })
+        response = client.post(
+            "/api/chat",
+            json={"message": "תן לי סיכום של המסמך בעברית", "session_id": session_id},
+        )
         assert response.status_code == 200
         summary_response = response.json()
         assert summary_response["success"] is True
@@ -185,9 +206,9 @@ class TestIntegration:
     def test_direct_chat_mode(self, client):
         """Test direct chat mode without uploading documents."""
         # Test direct chat (no documents uploaded)
-        response = client.post("/api/chat", json={
-            "message": "Hello, can you tell me a joke?"
-        })
+        response = client.post(
+            "/api/chat", json={"message": "Hello, can you tell me a joke?"}
+        )
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
@@ -196,10 +217,10 @@ class TestIntegration:
         session_id = data["session_id"]
 
         # Test follow-up in direct chat
-        response = client.post("/api/chat", json={
-            "message": "Tell me another one",
-            "session_id": session_id
-        })
+        response = client.post(
+            "/api/chat",
+            json={"message": "Tell me another one", "session_id": session_id},
+        )
         assert response.status_code == 200
         follow_up_data = response.json()
         assert follow_up_data["success"] is True
@@ -226,17 +247,25 @@ class TestIntegration:
         """
 
         # Mock PDF upload (in real integration test, this would be a real PDF)
-        response = client.post("/api/upload", files={
-            "file": ("ml_algorithms.txt", BytesIO(pdf_content.encode()), "text/plain")
-        })
+        response = client.post(
+            "/api/upload",
+            files={
+                "file": (
+                    "ml_algorithms.txt",
+                    BytesIO(pdf_content.encode()),
+                    "text/plain",
+                )
+            },
+        )
         assert response.status_code == 200
         upload_data = response.json()
         assert upload_data["success"] is True
 
         # Chat about the PDF content
-        response = client.post("/api/chat", json={
-            "message": "What algorithms are mentioned in the document?"
-        })
+        response = client.post(
+            "/api/chat",
+            json={"message": "What algorithms are mentioned in the document?"},
+        )
         assert response.status_code == 200
         chat_data = response.json()
         assert chat_data["success"] is True
@@ -245,15 +274,20 @@ class TestIntegration:
     def test_error_handling_and_recovery(self, client):
         """Test error scenarios and recovery."""
         # Test upload with unsupported file type
-        response = client.post("/api/upload", files={
-            "file": ("test.exe", BytesIO(b"binary content"), "application/octet-stream")
-        })
+        response = client.post(
+            "/api/upload",
+            files={
+                "file": (
+                    "test.exe",
+                    BytesIO(b"binary content"),
+                    "application/octet-stream",
+                )
+            },
+        )
         assert response.status_code == 400
 
         # Test chat with empty message
-        response = client.post("/api/chat", json={
-            "message": ""
-        })
+        response = client.post("/api/chat", json={"message": ""})
         assert response.status_code == 400
 
         # Test session history for non-existent session
@@ -267,22 +301,27 @@ class TestIntegration:
     def test_concurrent_sessions(self, client, sample_text_document):
         """Test multiple concurrent chat sessions."""
         # Upload a document first
-        response = client.post("/api/upload", files={
-            "file": ("test_doc.txt", BytesIO(sample_text_document.encode()), "text/plain")
-        })
+        response = client.post(
+            "/api/upload",
+            files={
+                "file": (
+                    "test_doc.txt",
+                    BytesIO(sample_text_document.encode()),
+                    "text/plain",
+                )
+            },
+        )
         assert response.status_code == 200
 
         # Create first session
-        response1 = client.post("/api/chat", json={
-            "message": "What is AI?"
-        })
+        response1 = client.post("/api/chat", json={"message": "What is AI?"})
         assert response1.status_code == 200
         session1_id = response1.json()["session_id"]
 
         # Create second session
-        response2 = client.post("/api/chat", json={
-            "message": "What is machine learning?"
-        })
+        response2 = client.post(
+            "/api/chat", json={"message": "What is machine learning?"}
+        )
         assert response2.status_code == 200
         session2_id = response2.json()["session_id"]
 
@@ -290,18 +329,18 @@ class TestIntegration:
         assert session1_id != session2_id
 
         # Continue conversation in both sessions
-        response1_follow = client.post("/api/chat", json={
-            "message": "Tell me more about it",
-            "session_id": session1_id
-        })
+        response1_follow = client.post(
+            "/api/chat",
+            json={"message": "Tell me more about it", "session_id": session1_id},
+        )
         assert response1_follow.status_code == 200
         assert response1_follow.json()["session_id"] == session1_id
         assert response1_follow.json()["message_count"] == 2
 
-        response2_follow = client.post("/api/chat", json={
-            "message": "What are its applications?",
-            "session_id": session2_id
-        })
+        response2_follow = client.post(
+            "/api/chat",
+            json={"message": "What are its applications?", "session_id": session2_id},
+        )
         assert response2_follow.status_code == 200
         assert response2_follow.json()["session_id"] == session2_id
         assert response2_follow.json()["message_count"] == 2
@@ -309,9 +348,7 @@ class TestIntegration:
     def test_mode_switching(self, client, sample_text_document):
         """Test switching between direct chat and RAG modes."""
         # Start with direct chat (no documents)
-        response = client.post("/api/chat", json={
-            "message": "Hello, what can you do?"
-        })
+        response = client.post("/api/chat", json={"message": "Hello, what can you do?"})
         assert response.status_code == 200
         direct_data = response.json()
         assert direct_data["success"] is True
@@ -319,16 +356,26 @@ class TestIntegration:
         session_id = direct_data["session_id"]
 
         # Upload a document (this should switch to RAG mode)
-        response = client.post("/api/upload", files={
-            "file": ("switch_test.txt", BytesIO(sample_text_document.encode()), "text/plain")
-        })
+        response = client.post(
+            "/api/upload",
+            files={
+                "file": (
+                    "switch_test.txt",
+                    BytesIO(sample_text_document.encode()),
+                    "text/plain",
+                )
+            },
+        )
         assert response.status_code == 200
 
         # Continue in the same session - should now use RAG mode
-        response = client.post("/api/chat", json={
-            "message": "What's in the uploaded document?",
-            "session_id": session_id
-        })
+        response = client.post(
+            "/api/chat",
+            json={
+                "message": "What's in the uploaded document?",
+                "session_id": session_id,
+            },
+        )
         assert response.status_code == 200
         rag_data = response.json()
         assert rag_data["success"] is True
@@ -338,23 +385,29 @@ class TestIntegration:
     def test_large_document_processing(self, client):
         """Test processing of large documents."""
         # Create a large document
-        large_content = "\n".join([
-            f"This is paragraph {i} about artificial intelligence and machine learning. " * 10
-            for i in range(100)
-        ])
-        
-        response = client.post("/api/upload", files={
-            "file": ("large_doc.txt", BytesIO(large_content.encode()), "text/plain")
-        })
+        large_content = "\n".join(
+            [
+                f"This is paragraph {i} about artificial intelligence and machine learning. "
+                * 10
+                for i in range(100)
+            ]
+        )
+
+        response = client.post(
+            "/api/upload",
+            files={
+                "file": ("large_doc.txt", BytesIO(large_content.encode()), "text/plain")
+            },
+        )
         assert response.status_code == 200
         upload_data = response.json()
         assert upload_data["success"] is True
         assert upload_data["chunks"] > 1  # Should be split into multiple chunks
 
         # Test chat with large document
-        response = client.post("/api/chat", json={
-            "message": "What is this document about?"
-        })
+        response = client.post(
+            "/api/chat", json={"message": "What is this document about?"}
+        )
         assert response.status_code == 200
         chat_data = response.json()
         assert chat_data["success"] is True
@@ -373,17 +426,25 @@ class TestIntegration:
         Chinese: 你好世界，人工智能
         """
 
-        response = client.post("/api/upload", files={
-            "file": ("special_chars.txt", BytesIO(special_content.encode('utf-8')), "text/plain")
-        })
+        response = client.post(
+            "/api/upload",
+            files={
+                "file": (
+                    "special_chars.txt",
+                    BytesIO(special_content.encode("utf-8")),
+                    "text/plain",
+                )
+            },
+        )
         assert response.status_code == 200
         upload_data = response.json()
         assert upload_data["success"] is True
 
         # Test chat with special characters
-        response = client.post("/api/chat", json={
-            "message": "What languages are mentioned in this document?"
-        })
+        response = client.post(
+            "/api/chat",
+            json={"message": "What languages are mentioned in this document?"},
+        )
         assert response.status_code == 200
         chat_data = response.json()
         assert chat_data["success"] is True
@@ -391,18 +452,32 @@ class TestIntegration:
     def test_document_deduplication(self, client, sample_text_document):
         """Test that duplicate documents are handled correctly."""
         # Upload document first time
-        response1 = client.post("/api/upload", files={
-            "file": ("duplicate_test.txt", BytesIO(sample_text_document.encode()), "text/plain")
-        })
+        response1 = client.post(
+            "/api/upload",
+            files={
+                "file": (
+                    "duplicate_test.txt",
+                    BytesIO(sample_text_document.encode()),
+                    "text/plain",
+                )
+            },
+        )
         assert response1.status_code == 200
         upload1_data = response1.json()
         assert upload1_data["success"] is True
         doc_id1 = upload1_data["document_id"]
 
         # Upload same document again (should return 400 for duplicate)
-        response2 = client.post("/api/upload", files={
-            "file": ("duplicate_test.txt", BytesIO(sample_text_document.encode()), "text/plain")
-        })
+        response2 = client.post(
+            "/api/upload",
+            files={
+                "file": (
+                    "duplicate_test.txt",
+                    BytesIO(sample_text_document.encode()),
+                    "text/plain",
+                )
+            },
+        )
         assert response2.status_code == 400
         error_data = response2.json()
         assert "already exists" in error_data["detail"]
@@ -410,4 +485,4 @@ class TestIntegration:
         # Check that document count hasn't increased
         response = client.get("/api/sources")
         sources_data = response.json()
-        # Should not have doubled the documents 
+        # Should not have doubled the documents
