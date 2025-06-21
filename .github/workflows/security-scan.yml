@@ -41,7 +41,7 @@ jobs:
 
       - name: 💾 Load cached venv
         id: cached-poetry-dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .venv
           key: security-venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -104,7 +104,7 @@ jobs:
           fi
 
       - name: 📤 Upload security reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: security-reports
