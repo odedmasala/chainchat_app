@@ -46,7 +46,7 @@ jobs:
 
       - name: 💾 Load cached venv
         id: cached-poetry-dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
@@ -95,7 +95,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: 📤 Upload coverage reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: coverage-reports-${{ matrix.python-version }}
