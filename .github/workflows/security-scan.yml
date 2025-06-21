@@ -3,20 +3,6 @@ name: Security Scanning
 on:
   workflow_call:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "chainchat/**"
-      - "pyproject.toml"
-      - "poetry.lock"
-  pull_request:
-    branches: [main]
-    paths:
-      - "chainchat/**"
-      - "pyproject.toml"
-      - "poetry.lock"
-  schedule:
-    - cron: "0 2 * * 1"
 
 jobs:
   security-analysis:

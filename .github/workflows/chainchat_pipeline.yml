@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1" # Weekly security scan every Monday at 6 AM UTC
 
 jobs:
   code-quality:
