@@ -1,5 +1,3 @@
-import os
-import tempfile
 from io import BytesIO
 
 import pytest
@@ -19,66 +17,69 @@ class TestIntegration:
     @pytest.fixture
     def sample_text_document(self):
         """Create a sample text document for testing."""
-        return """
-        This is a comprehensive test document about artificial intelligence and machine learning.
-        
-        Artificial Intelligence (AI) is a fascinating field that aims to create intelligent machines.
-        These machines can perform tasks that typically require human intelligence, such as:
-        - Learning from experience
-        - Recognizing patterns
-        - Making decisions
-        - Understanding natural language
-        
-        Machine Learning (ML) is a subset of AI that focuses on algorithms that improve automatically
-        through experience. There are three main types of machine learning:
-        1. Supervised Learning - learning with labeled examples
-        2. Unsupervised Learning - finding patterns in unlabeled data  
-        3. Reinforcement Learning - learning through trial and error
-        
-        Deep Learning is a subset of machine learning that uses neural networks with multiple layers.
-        It has revolutionized fields like computer vision, natural language processing, and speech recognition.
-        
-        The history of AI dates back to the 1950s when Alan Turing proposed the famous Turing Test.
-        Since then, we've seen remarkable progress in AI capabilities.
-        
-        Some popular AI applications today include:
-        - Virtual assistants like Siri and Alexa
-        - Recommendation systems on Netflix and YouTube
-        - Autonomous vehicles and self-driving cars
-        - Medical diagnosis and healthcare systems
-        - Language translation services like Google Translate
-        - Image recognition and computer vision systems
-        
-        The future of AI holds great promise for solving complex global challenges in healthcare, 
-        climate change, education, and many other fields. However, it also raises important ethical 
-        questions about privacy, job displacement, and the responsible development of AI systems.
-        """
+        return (
+            "This is a comprehensive test document about artificial "
+            "intelligence and machine learning.\n\n"
+            "Artificial Intelligence (AI) is a fascinating field that aims to "
+            "create intelligent machines.\n"
+            "These machines can perform tasks that typically require human "
+            "intelligence, such as:\n"
+            "- Learning from experience\n"
+            "- Recognizing patterns\n"
+            "- Making decisions\n"
+            "- Understanding natural language\n\n"
+            "Machine Learning (ML) is a subset of AI that focuses on algorithms "
+            "that improve automatically\n"
+            "through experience. There are three main types of machine learning:\n"
+            "1. Supervised Learning - learning with labeled examples\n"
+            "2. Unsupervised Learning - finding patterns in unlabeled data\n"
+            "3. Reinforcement Learning - learning through trial and error\n\n"
+            "Deep Learning is a subset of machine learning that uses neural "
+            "networks with multiple layers.\n"
+            "It has revolutionized fields like computer vision, natural language "
+            "processing, and speech recognition.\n\n"
+            "The history of AI dates back to the 1950s when Alan Turing proposed "
+            "the famous Turing Test.\n"
+            "Since then, we've seen remarkable progress in AI capabilities.\n\n"
+            "Some popular AI applications today include:\n"
+            "- Virtual assistants like Siri and Alexa\n"
+            "- Recommendation systems on Netflix and YouTube\n"
+            "- Autonomous vehicles and self-driving cars\n"
+            "- Medical diagnosis and healthcare systems\n"
+            "- Language translation services like Google Translate\n"
+            "- Image recognition and computer vision systems\n\n"
+            "The future of AI holds great promise for solving complex global "
+            "challenges in healthcare,\n"
+            "climate change, education, and many other fields. However, it also "
+            "raises important ethical\n"
+            "questions about privacy, job displacement, and the responsible "
+            "development of AI systems.\n"
+        )
 
     @pytest.fixture
     def sample_multilingual_document(self):
         """Create a sample document with multiple languages including Hebrew."""
-        return """
-        This is a multilingual document that contains text in different languages.
-        
-        English: Artificial Intelligence is transforming our world.
-        
-        עברית: בינה מלאכותית משנה את העולם שלנו. היא כוללת תחומים רבים כמו למידת מכונה, 
-        עיבוד שפה טבעית, וראייה ממוחשבת. הטכנולוגיה הזו עוזרת לנו לפתור בעיות מורכבות 
-        ולשפר את איכות החיים.
-        
-        Français: L'intelligence artificielle transforme notre façon de travailler.
-        
-        中文: 人工智能正在改变我们的世界。
-        
-        עברית נוסף: מערכות בינה מלאכותית יכולות לעזור בתחומים כמו:
-        - רפואה ואבחון מחלות
-        - חינוך מותאם אישית  
-        - תחבורה אוטונומית
-        - אבטחת מידע
-        - ניתוח נתונים כלכליים
-        
-        המטרה היא לפתח טכנולוגיה שתשרת את האנושות ותשפר את איכות החיים של כולם.
-        """
+        return (
+            "This is a multilingual document that contains text in different "
+            "languages.\n\n"
+            "English: Artificial Intelligence is transforming our world.\n\n"
+            "עברית: בינה מלאכותית משנה את העולם שלנו. היא כוללת תחומים רבים "
+            "כמו למידת מכונה,\n"
+            "עיבוד שפה טבעית, וראייה ממוחשבת. הטכנולוגיה הזו עוזרת לנו "
+            "לפתור בעיות מורכבות\n"
+            "ולשפר את איכות החיים.\n\n"
+            "Français: L'intelligence artificielle transforme notre façon "
+            "de travailler.\n\n"
+            "中文: 人工智能正在改变我们的世界。\n\n"
+            "עברית נוסף: מערכות בינה מלאכותית יכולות לעזור בתחומים כמו:\n"
+            "- רפואה ואבחון מחלות\n"
+            "- חינוך מותאם אישית\n"
+            "- תחבורה אוטונומית\n"
+            "- אבטחת מידע\n"
+            "- ניתוח נתונים כלכליים\n\n"
+            "המטרה היא לפתח טכנולוגיה שתשרת את האנושות ותשפר את איכות "
+            "החיים של כולם.\n"
+        )
 
     def test_full_workflow_text_upload(self, client, sample_text_document):
         """Test the complete workflow: health check, upload, and chat."""
@@ -196,7 +197,10 @@ class TestIntegration:
         # Test Hebrew question asking for summary
         response = client.post(
             "/api/chat",
-            json={"message": "תן לי סיכום של המסמך בעברית", "session_id": session_id},
+            json={
+                "message": "תן לי סיכום של המסמך בעברית",
+                "session_id": session_id
+            },
         )
         assert response.status_code == 200
         summary_response = response.json()
@@ -232,17 +236,23 @@ class TestIntegration:
         # Create a simple PDF-like content (this would normally be a real PDF)
         pdf_content = """
         This is a test PDF document about machine learning algorithms.
-        
+
         Linear Regression is one of the fundamental algorithms in machine learning.
-        It attempts to model the relationship between variables by fitting a linear equation.
-        
-        Random Forest is an ensemble learning method that combines multiple decision trees.
-        It's known for its robustness and ability to handle both classification and regression tasks.
-        
-        Support Vector Machines (SVM) are powerful algorithms for classification and regression.
-        They work by finding the optimal hyperplane that separates different classes.
-        
-        Neural Networks are inspired by biological neural networks and consist of interconnected nodes.
+        It attempts to model the relationship between variables by fitting a
+        linear equation.
+
+        Random Forest is an ensemble learning method that combines multiple
+        decision trees.
+        It's known for its robustness and ability to handle both classification
+        and regression tasks.
+
+        Support Vector Machines (SVM) are powerful algorithms for classification
+        and regression.
+        They work by finding the optimal hyperplane that separates different
+        classes.
+
+        Neural Networks are inspired by biological neural networks and consist of
+        interconnected nodes.
         They can learn complex patterns and are the foundation of deep learning.
         """
 
@@ -339,7 +349,10 @@ class TestIntegration:
 
         response2_follow = client.post(
             "/api/chat",
-            json={"message": "What are its applications?", "session_id": session2_id},
+            json={
+                "message": "What are its applications?",
+                "session_id": session2_id
+            },
         )
         assert response2_follow.status_code == 200
         assert response2_follow.json()["session_id"] == session2_id
@@ -348,7 +361,9 @@ class TestIntegration:
     def test_mode_switching(self, client, sample_text_document):
         """Test switching between direct chat and RAG modes."""
         # Start with direct chat (no documents)
-        response = client.post("/api/chat", json={"message": "Hello, what can you do?"})
+        response = client.post(
+            "/api/chat", json={"message": "Hello, what can you do?"}
+        )
         assert response.status_code == 200
         direct_data = response.json()
         assert direct_data["success"] is True
@@ -387,8 +402,8 @@ class TestIntegration:
         # Create a large document
         large_content = "\n".join(
             [
-                f"This is paragraph {i} about artificial intelligence and machine learning. "
-                * 10
+                f"This is paragraph {i} about artificial intelligence and "
+                "machine learning. " * 10
                 for i in range(100)
             ]
         )
@@ -415,7 +430,7 @@ class TestIntegration:
     def test_special_characters_and_encoding(self, client):
         """Test handling of special characters and different encodings."""
         special_content = """
-        This document contains special characters: 
+        This document contains special characters:
         • Bullet points
         — Em dashes
         "Smart quotes"
@@ -465,7 +480,6 @@ class TestIntegration:
         assert response1.status_code == 200
         upload1_data = response1.json()
         assert upload1_data["success"] is True
-        doc_id1 = upload1_data["document_id"]
 
         # Upload same document again (should return 400 for duplicate)
         response2 = client.post(
@@ -484,5 +498,5 @@ class TestIntegration:
 
         # Check that document count hasn't increased
         response = client.get("/api/sources")
-        sources_data = response.json()
+        response.json()  # Check response but don't store unused variable
         # Should not have doubled the documents

@@ -1,7 +1,7 @@
 import hashlib
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from langchain.chains import ConversationalRetrievalChain, ConversationChain
 from langchain.memory import ConversationBufferWindowMemory
@@ -33,7 +33,8 @@ class ChatService:
                     model_name="paraphrase-multilingual-MiniLM-L12-v2"
                 )
                 print(
-                    "🔧 Using multilingual Sentence Transformer embeddings (Hebrew supported)"
+                    "🔧 Using multilingual Sentence Transformer embeddings "
+                    "(Hebrew supported)"
                 )
             except Exception:
                 self.embeddings = SentenceTransformerEmbeddings(
@@ -71,11 +72,11 @@ class ChatService:
                     "document_id": doc_hash,
                 }
 
-            print(f"✂️  Splitting text into chunks...")
+            print("✂️  Splitting text into chunks...")
             chunks = self.text_splitter.split_text(text)
             print(f"✅ Created {len(chunks)} chunks")
 
-            print(f"📝 Creating document objects...")
+            print("📝 Creating document objects...")
             documents = []
             for i, chunk in enumerate(chunks):
                 doc = Document(
@@ -99,9 +100,9 @@ class ChatService:
                 "character_count": len(text),
             }
 
-            print(f"🔍 Rebuilding vector store...")
+            print("🔍 Rebuilding vector store...")
             self._rebuild_vector_store()
-            print(f"✅ Document processing complete!")
+            print("✅ Document processing complete!")
 
             return {
                 "success": True,
@@ -196,21 +197,26 @@ class ChatService:
 
                 multilingual_prompt = PromptTemplate(
                     input_variables=["context", "question"],
-                    template="""You are a helpful AI assistant that can communicate in multiple languages including Hebrew, English, Arabic, and others. Use the following pieces of context to answer the question at the end. 
-
-Important instructions:
-1. If the question is in Hebrew (עברית), respond in Hebrew unless specifically asked otherwise
-2. If the question is in English, respond in English unless asked otherwise  
-3. If the question refers to "the file", "the document", "הקובץ", "המסמך", it refers to the uploaded document(s)
-4. Maintain conversation context across different languages
-5. When switching languages, acknowledge the previous conversation context
-
-Context from documents:
-{context}
-
-Question: {question}
-
-Answer in the same language as the question, and provide helpful, accurate information based on the context.""",
+                    template=(
+                        "You are a helpful AI assistant that can communicate in "
+                        "multiple languages including Hebrew, English, Arabic, and "
+                        "others. Use the following pieces of context to answer the "
+                        "question at the end.\n\n"
+                        "Important instructions:\n"
+                        "1. If the question is in Hebrew (עברית), respond in Hebrew "
+                        "unless specifically asked otherwise\n"
+                        "2. If the question is in English, respond in English "
+                        "unless asked otherwise\n"
+                        "3. If the question refers to \"the file\", \"the document\", "
+                        "\"הקובץ\", \"המסמך\", it refers to the uploaded document(s)\n"
+                        "4. Maintain conversation context across different languages\n"
+                        "5. When switching languages, acknowledge the previous "
+                        "conversation context\n\n"
+                        "Context from documents:\n{context}\n\n"
+                        "Question: {question}\n\n"
+                        "Answer in the same language as the question, and provide "
+                        "helpful, accurate information based on the context."
+                    ),
                 )
 
                 qa_chain = ConversationalRetrievalChain.from_llm(
@@ -226,30 +232,41 @@ Answer in the same language as the question, and provide helpful, accurate infor
                 enhanced_question = question
 
                 if any(
-                    word in question for word in ["הקובץ", "המסמך", "הטקסט", "המידע"]
+                    word in question
+                    for word in ["הקובץ", "המסמך", "הטקסט", "המידע"]
                 ):
-                    enhanced_question = f"בהתבסס על המסמך שהועלה, {question}"
+                    enhanced_question = (
+                        f"בהתבסס על המסמך שהועלה, {question}"
+                    )
                 elif "תסביר" in question and (
                     "בעברית" in question or len(question.split()) <= 3
                 ):
-                    enhanced_question = f"תסביר את התוכן של המסמך שהועלה בעברית"
+                    enhanced_question = (
+                        "תסביר את התוכן של המסמך שהועלה בעברית"
+                    )
                 elif question.strip() in [
                     "תסביר על הקובץ בבקשה",
                     "תן לי סיכום",
                     "מה יש במסמך",
                 ]:
-                    enhanced_question = f"בהתבסס על המסמך שהועלה, {question}"
+                    enhanced_question = (
+                        f"בהתבסס על המסמך שהועלה, {question}"
+                    )
                 elif any(
                     word in question.lower()
                     for word in ["the file", "the document", "this document"]
                 ):
-                    enhanced_question = f"Based on the uploaded document, {question}"
+                    enhanced_question = (
+                        f"Based on the uploaded document, {question}"
+                    )
                 elif question.lower().strip() in [
                     "explain in english",
                     "summarize this",
                     "what's in this",
                 ]:
-                    enhanced_question = f"Based on the uploaded document, {question}"
+                    enhanced_question = (
+                        f"Based on the uploaded document, {question}"
+                    )
 
                 result = qa_chain.invoke({"question": enhanced_question})
 
@@ -293,11 +310,12 @@ Answer in the same language as the question, and provide helpful, accurate infor
                     "message": "OpenAI API quota exceeded",
                     "answer": """🚫 **OpenAI API Quota Exceeded**
 
-I can process your documents perfectly (using local embeddings), but I need OpenAI API access to generate chat responses.
+I can process your documents perfectly (using local embeddings),
+but I need OpenAI API access to generate chat responses.
 
 **💡 Solutions:**
 1. **Add credits** to your OpenAI account at https://platform.openai.com/billing
-2. **Wait for quota reset** (if on monthly plan)  
+2. **Wait for quota reset** (if on monthly plan)
 3. **Check your billing details** at https://platform.openai.com/settings/billing
 
 **📊 Current Status:**
@@ -310,7 +328,10 @@ Your documents are ready - I just need API access to answer questions about them
             return {
                 "success": False,
                 "message": f"Error processing question: {error_str}",
-                "answer": "I encountered an error while processing your question. Please try again.",
+                "answer": (
+                    "I encountered an error while processing your "
+                    "question. Please try again."
+                ),
             }
 
     def get_sources(self) -> Dict[str, Any]:
@@ -351,34 +372,38 @@ Your documents are ready - I just need API access to answer questions about them
                 self.vector_store = FAISS.from_documents(
                     self.documents, self.embeddings
                 )
-                print(f"✅ Vector store created with {self.embedding_type} embeddings")
+                print(
+                    f"✅ Vector store created with {self.embedding_type} "
+                    "embeddings"
+                )
             except Exception as e:
                 if "quota" in str(e).lower() or "429" in str(e):
-                    print(f"💳 OpenAI quota exceeded, switching to local embeddings...")
+                    print("💳 OpenAI quota exceeded, switching to local embeddings...")
                     print(
-                        f"📥 Downloading sentence-transformers model (first time only)..."
+                        "📥 Downloading sentence-transformers model "
+                        "(first time only)..."
                     )
-                    print(f"⏳ This may take 1-3 minutes - please wait...")
+                    print("⏳ This may take 1-3 minutes - please wait...")
 
                     try:
                         self.embeddings = SentenceTransformerEmbeddings(
                             model_name="paraphrase-multilingual-MiniLM-L12-v2"
                         )
                         print(
-                            f"✅ Multilingual model downloaded and loaded successfully!"
+                            "✅ Multilingual model downloaded and loaded successfully!"
                         )
                     except Exception:
                         self.embeddings = SentenceTransformerEmbeddings(
                             model_name="all-MiniLM-L6-v2"
                         )
-                        print(f"✅ Basic model downloaded and loaded successfully!")
+                        print("✅ Basic model downloaded and loaded successfully!")
                     self.embedding_type = "local"
 
-                    print(f"🔄 Creating vector store with local embeddings...")
+                    print("🔄 Creating vector store with local embeddings...")
                     self.vector_store = FAISS.from_documents(
                         self.documents, self.embeddings
                     )
-                    print(f"✅ Vector store created with local embeddings")
+                    print("✅ Vector store created with local embeddings")
                 else:
                     raise e
 

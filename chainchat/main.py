@@ -1,17 +1,19 @@
-from dotenv import load_dotenv
-
-load_dotenv()
-
 import io
 import os
 from typing import Optional
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from dotenv import load_dotenv
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from pypdf import PdfReader
+
+from .chat import chat_service
+from .config import settings
+
+load_dotenv()
 
 try:
     import fitz
@@ -20,9 +22,6 @@ try:
 except ImportError:
     PYMUPDF_AVAILABLE = False
     print("PyMuPDF not available. Using pypdf only for PDF extraction.")
-
-from .chat import chat_service
-from .config import settings
 
 
 def extract_pdf_text(content: bytes) -> str:
@@ -140,7 +139,8 @@ async def read_root():
     if os.path.exists(static_index):
         return FileResponse(static_index)
     return {
-        "message": f"Welcome to {settings.app_name}! Upload documents and start chatting."
+        "message": f"Welcome to {settings.app_name}! "
+        "Upload documents and start chatting."
     }
 
 
