@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChainChat - AI Document Assistant</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #64748b;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --error: #ef4444;
+            --radius: 8px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+            min-height: 100vh;
+        }
+
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        .chat-section {
+            display: flex;
+            flex-direction: column;
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .chat-header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .chat-header p {
+            opacity: 0.9;
+            font-size: 0.875rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            min-height: 400px;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 12px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user { flex-direction: row-reverse; }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar { background: var(--primary); }
+        .message.assistant .message-avatar { background: var(--secondary); }
+
+        .message-content {
+            max-width: 80%;
+            background: #f1f5f9;
+            padding: 16px;
+            border-radius: var(--radius);
+            box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+        }
+
+        .message.user .message-content {
+            background: var(--primary);
+            color: white;
+        }
+
+        .message-sources {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+
+        .message-mode {
+            margin-top: 8px;
+            padding: 4px 0;
+            font-size: 0.75rem;
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        .source-item {
+            background: var(--bg);
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .chat-input-container {
+            padding: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .chat-input-form {
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            resize: none;
+            min-height: 44px;
+            max-height: 120px;
+            font-family: inherit;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .send-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background: var(--primary-dark);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .upload-section, .stats-section {
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: #f1f5f9;
+            padding: 16px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .upload-area {
+            padding: 24px;
+            text-align: center;
+            border: 2px dashed var(--border);
+            margin: 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary);
+            background: rgb(37 99 235 / 0.05);
+        }
+
+        .upload-icon { font-size: 2rem; margin-bottom: 12px; }
+        .upload-text { color: var(--text-light); font-size: 0.875rem; }
+        .file-input { display: none; }
+
+        .stats-content { padding: 16px; }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-item:last-child { border-bottom: none; }
+        .stat-label { color: var(--text-light); font-size: 0.875rem; }
+        .stat-value { font-weight: 600; color: var(--primary); }
+
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: var(--radius);
+            color: white;
+            font-weight: 500;
+            box-shadow: var(--shadow);
+            transform: translateX(400px);
+            transition: transform 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show { transform: translateX(0); }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--error); }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <main class="chat-section">
+            <header class="chat-header">
+                <h1>🤖 ChainChat</h1>
+                <p id="chatMode">Chat directly with AI or upload documents for enhanced responses</p>
+            </header>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="empty-state">
+                    <div class="empty-state-icon">💬</div>
+                    <p>Start chatting! Upload documents for enhanced responses, or ask me anything directly.</p>
+                </div>
+            </div>
+            
+            <div class="chat-input-container">
+                <form class="chat-input-form" id="chatForm">
+                    <textarea 
+                        class="chat-input" 
+                        id="messageInput" 
+                        placeholder="Ask me anything about your uploaded documents..."
+                        rows="1"
+                    ></textarea>
+                    <button type="submit" class="send-button" id="sendButton">Send</button>
+                </form>
+            </div>
+        </main>
+        
+        <aside class="sidebar">
+            <section class="upload-section">
+                <div class="section-header">📁 Upload Documents</div>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">
+                        <strong>Click to upload</strong> or drag and drop<br>
+                        <small>Supported: .txt, .md, .csv, .json, .py, .pdf</small>
+                    </div>
+                    <input type="file" class="file-input" id="fileInput" accept=".txt,.md,.csv,.json,.py,.pdf">
+                </div>
+            </section>
+            
+            <section class="stats-section">
+                <div class="section-header">📊 Knowledge Base</div>
+                <div class="stats-content">
+                    <div class="stat-item">
+                        <span class="stat-label">Documents</span>
+                        <span class="stat-value" id="docCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Text Chunks</span>
+                        <span class="stat-value" id="chunkCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Status</span>
+                        <span class="stat-value" id="status">Ready</span>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </div>
+
+    <script>
+        class ChainChatApp {
+            constructor() {
+                this.sessionId = null;
+                this.isLoading = false;
+                this.initElements();
+                this.bindEvents();
+                this.loadStats();
+            }
+
+            initElements() {
+                this.chatMessages = document.getElementById('chatMessages');
+                this.messageInput = document.getElementById('messageInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.chatForm = document.getElementById('chatForm');
+                this.fileInput = document.getElementById('fileInput');
+                this.uploadArea = document.getElementById('uploadArea');
+                this.docCount = document.getElementById('docCount');
+                this.chunkCount = document.getElementById('chunkCount');
+                this.status = document.getElementById('status');
+                this.chatMode = document.getElementById('chatMode');
+            }
+
+            bindEvents() {
+                this.chatForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.sendMessage();
+                });
+
+                this.messageInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                this.uploadArea.addEventListener('click', () => this.fileInput.click());
+                this.fileInput.addEventListener('change', (e) => this.handleFileUpload(e.target.files[0]));
+
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
+                });
+
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('dragover');
+                });
+
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    this.handleFileUpload(e.dataTransfer.files[0]);
+                });
+            }
+
+            async sendMessage() {
+                const message = this.messageInput.value.trim();
+                if (!message || this.isLoading) return;
+
+                this.addMessage(message, 'user');
+                this.messageInput.value = '';
+                this.setLoading(true);
+
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            message,
+                            session_id: this.sessionId
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.sessionId = data.session_id;
+                        this.addMessage(data.answer, 'assistant', data.sources, data.mode);
+                        this.updateChatMode(data.mode);
+                    } else {
+                        this.addMessage(data.message || 'Sorry, I encountered an error.', 'assistant');
+                        this.showToast(data.message || 'Error processing message', 'error');
+                    }
+                } catch (error) {
+                    this.addMessage('Sorry, I encountered a connection error.', 'assistant');
+                    this.showToast('Connection error. Please try again.', 'error');
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+
+            addMessage(content, sender, sources = [], mode = null) {
+                const emptyState = this.chatMessages.querySelector('.empty-state');
+                if (emptyState) emptyState.remove();
+
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.textContent = sender === 'user' ? 'You' : 'AI';
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.innerHTML = this.formatMessage(content);
+
+                // Add mode indicator for assistant messages
+                if (sender === 'assistant' && mode) {
+                    const modeDiv = document.createElement('div');
+                    modeDiv.className = 'message-mode';
+                    modeDiv.innerHTML = mode === 'direct_chat' 
+                        ? '<small>💬 Direct Chat Mode</small>'
+                        : '<small>📚 Document-Enhanced Mode</small>';
+                    contentDiv.appendChild(modeDiv);
+                }
+
+                if (sources && sources.length > 0) {
+                    const sourcesDiv = document.createElement('div');
+                    sourcesDiv.className = 'message-sources';
+                    sourcesDiv.innerHTML = '<strong>Sources:</strong>' + 
+                        sources.map(source => 
+                            `<div class="source-item">📄 ${source.filename} (chunk ${source.chunk_id + 1})</div>`
+                        ).join('');
+                    contentDiv.appendChild(sourcesDiv);
+                }
+
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(contentDiv);
+                this.chatMessages.appendChild(messageDiv);
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }
+
+            updateChatMode(mode) {
+                if (mode === 'direct_chat') {
+                    this.chatMode.textContent = '💬 Direct Chat Mode - Ask me anything!';
+                } else if (mode === 'rag_chat') {
+                    this.chatMode.textContent = '📚 Document-Enhanced Mode - Answers based on your documents';
+                }
+            }
+
+            formatMessage(content) {
+                return content
+                    .replace(/\n/g, '<br>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+            }
+
+            async handleFileUpload(file) {
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('file', file);
+                this.status.textContent = 'Uploading...';
+
+                try {
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        this.showToast(`Document uploaded! ${data.chunks} chunks created.`, 'success');
+                        this.loadStats();
+                        this.addMessage(
+                            `📄 **${file.name}** uploaded and processed into ${data.chunks} chunks. You can now ask questions!`,
+                            'assistant'
+                        );
+                    } else {
+                        this.showToast(data.message || 'Upload failed', 'error');
+                    }
+                } catch (error) {
+                    this.showToast('Upload failed. Please try again.', 'error');
+                } finally {
+                    this.status.textContent = 'Ready';
+                }
+            }
+
+            async loadStats() {
+                try {
+                    const response = await fetch('/api/sources');
+                    const data = await response.json();
+                    this.docCount.textContent = data.total_documents || 0;
+                    this.chunkCount.textContent = data.total_chunks || 0;
+                    
+                    // Update chat mode based on document count
+                    if (data.total_documents > 0) {
+                        this.chatMode.textContent = '📚 Document-Enhanced Mode - Answers based on your documents';
+                    } else {
+                        this.chatMode.textContent = '💬 Direct Chat Mode - Ask me anything!';
+                    }
+                } catch (error) {
+                    console.error('Failed to load stats:', error);
+                }
+            }
+
+            setLoading(loading) {
+                this.isLoading = loading;
+                this.sendButton.disabled = loading;
+                this.sendButton.innerHTML = loading ? '<span class="loading"></span>' : 'Send';
+            }
+
+            showToast(message, type = 'success') {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => toast.classList.add('show'), 100);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => document.body.removeChild(toast), 300);
+                }, 4000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => new ChainChatApp());
+    </script>
+</body>
+</html> 
