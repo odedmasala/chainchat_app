@@ -78,7 +78,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Component | Status | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|--------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 🧪 Code Quality & Testing | ${{ needs.code-quality.result }} | ${{ needs.code-quality.result == 'success' && '✅ All checks passed' || '❌ Issues detected' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧪 Code Quality & Testing | ${{ needs.code-quality.result }} | ${{ needs.code-quality.result == 'success' && '✅ Unit & Integration tests passed' || '❌ Tests or quality checks failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 🛡️ Security Analysis | ${{ needs.security-scan.result }} | ${{ needs.security-scan.result == 'success' && '✅ No security issues' || '⚠️ Attention required' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 🔍 Vulnerability Scanning | ${{ needs.vulnerability-scan.result }} | ${{ needs.vulnerability-scan.result == 'success' && '✅ No vulnerabilities' || '⚠️ Issues found' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 🔐 Secret Detection | ${{ needs.secret-scan.result }} | ${{ needs.secret-scan.result == 'success' && '✅ No secrets found' || '🚨 Secrets detected' }} |" >> $GITHUB_STEP_SUMMARY
@@ -91,7 +91,8 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "🎉 **All security checks passed successfully!**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "- 🧪 Code quality and tests: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+            echo "- 🧪 Unit & Integration tests: ✅ Passed" >> $GITHUB_STEP_SUMMARY
+            echo "- 🎨 Code quality checks: ✅ Passed" >> $GITHUB_STEP_SUMMARY
             echo "- 🛡️ Security analysis: ✅ Clean" >> $GITHUB_STEP_SUMMARY
             echo "- 🔍 Vulnerability scanning: ✅ Secure" >> $GITHUB_STEP_SUMMARY
             echo "- 🔐 Secret detection: ✅ No leaks" >> $GITHUB_STEP_SUMMARY
@@ -115,6 +116,7 @@ jobs:
         if: ${{ needs.code-quality.result == 'success' && needs.security-scan.result == 'success' && needs.vulnerability-scan.result == 'success' && needs.secret-scan.result == 'success' && needs.ci-security.result == 'success' }}
         run: |
           echo "🎉 SUCCESS: All security pipeline checks passed!"
+          echo "✅ Unit & Integration Tests: PASSED"
           echo "✅ Code Quality: PASSED"
           echo "✅ Security Analysis: CLEAN"  
           echo "✅ Vulnerability Scan: SECURE"
