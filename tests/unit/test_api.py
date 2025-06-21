@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from chainchat.main import app
 
 
+@pytest.mark.unit
 class TestAPIEndpoints:
     """Unit tests for FastAPI endpoints."""
 

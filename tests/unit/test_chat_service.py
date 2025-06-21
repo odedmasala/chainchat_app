@@ -8,6 +8,7 @@ from chainchat.chat import ChatService
 from chainchat.config import Settings
 
 
+@pytest.mark.unit
 class TestChatService:
     """Unit tests for ChatService class."""
 
