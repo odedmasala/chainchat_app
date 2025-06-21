@@ -17,21 +17,36 @@ jobs:
     name: Security Analysis
     uses: ./.github/workflows/security-scan.yml
     secrets: inherit
+    permissions:
+      contents: read
+      issues: write
 
   vulnerability-scan:
     name: Vulnerability Scanning
     uses: ./.github/workflows/vulnerability-scan.yml
     secrets: inherit
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
 
   secret-scan:
     name: Secret Detection
     uses: ./.github/workflows/secret-scan.yml
     secrets: inherit
+    permissions:
+      contents: read
+      issues: write
 
   ci-security:
     name: CI/CD Security
     uses: ./.github/workflows/ci-security.yml
     secrets: inherit
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      issues: write
 
   docker-security:
     name: Docker Security Scan
