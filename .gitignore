@@ -35,41 +35,14 @@ venv.bak/
 .env
 *.env
 
-# Hugging Face cache (if used)
-cache/
-__cache__/
-.huggingface/
 
-# Pytest
-.pytest_cache/
-.coverage
-htmlcov/
 
 # IDEs and editors
 .vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
 
 # macOS
 .DS_Store
 
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# Docker
-docker-compose.override.yml
-**/docker-compose.override.yml
-Dockerfile*
-
-# Tilt
-.tilt/
-.tilt-state/
-
-# Kubernetes config
-.kube/
 
 # Node (if you add a frontend)
 node_modules/
