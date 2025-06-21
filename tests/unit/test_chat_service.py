@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -26,19 +26,10 @@ class TestChatService:
         """Create a ChatService instance with mocked dependencies."""
         with (
             patch("chainchat.chat.settings", mock_settings),
-            patch("chainchat.chat.OpenAIEmbeddings") as mock_embeddings,
-            patch("chainchat.chat.ChatOpenAI") as mock_llm,
-            patch("chainchat.chat.RecursiveCharacterTextSplitter") as mock_splitter,
+            patch("chainchat.chat.OpenAIEmbeddings"),
+            patch("chainchat.chat.ChatOpenAI"),
+            patch("chainchat.chat.RecursiveCharacterTextSplitter"),
         ):
-
-            # Mock the embeddings
-            mock_embeddings.return_value = Mock()
-
-            # Mock the LLM
-            mock_llm.return_value = Mock()
-
-            # Mock the text splitter
-            mock_splitter.return_value = Mock()
 
             service = ChatService()
             service.embeddings = Mock()
@@ -51,9 +42,9 @@ class TestChatService:
         """Test that ChatService initializes with proper instances."""
         with (
             patch("chainchat.chat.settings", mock_settings),
-            patch("chainchat.chat.OpenAIEmbeddings") as mock_embeddings,
-            patch("chainchat.chat.ChatOpenAI") as mock_llm,
-            patch("chainchat.chat.RecursiveCharacterTextSplitter") as mock_splitter,
+            patch("chainchat.chat.OpenAIEmbeddings"),
+            patch("chainchat.chat.ChatOpenAI"),
+            patch("chainchat.chat.RecursiveCharacterTextSplitter"),
         ):
 
             service = ChatService()
@@ -338,7 +329,7 @@ class TestChatService:
             mock_memory = Mock()
             mock_memory_class.return_value = mock_memory
 
-            result = chat_service.ask(question)
+            chat_service.ask(question)
 
             # Check that memory was created with correct parameters for direct chat
             mock_memory_class.assert_called_with(
@@ -367,7 +358,7 @@ class TestChatService:
             mock_memory.chat_memory.messages = []
             mock_memory_class.return_value = mock_memory
 
-            result = chat_service.ask(question)
+            chat_service.ask(question)
 
             # Check that memory was created with correct parameters for RAG
             mock_memory_class.assert_called_with(

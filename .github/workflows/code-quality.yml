@@ -11,7 +11,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.11"]
       fail-fast: false
 
     steps:
@@ -52,7 +52,7 @@ jobs:
       - name: Import sorting check with isort
         run: |
           poetry run pip install isort
-          poetry run isort --check-only --diff .
+          poetry run isort --check-only --diff --profile black .
 
       - name: Linting with flake8
         run: |

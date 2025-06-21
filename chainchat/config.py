@@ -1,4 +1,3 @@
-import os
 from typing import Optional
 
 from pydantic import model_validator
@@ -27,7 +26,8 @@ class Settings(BaseSettings):
     def validate_openai_key(self):
         if not self.openai_api_key:
             raise ValueError(
-                "OPENAI_API_KEY environment variable is required. Please set it in your .env file."
+                "OPENAI_API_KEY environment variable is required. "
+                "Please set it in your .env file."
             )
         return self
 

@@ -130,10 +130,12 @@ def mock_openai_for_tests():
                     memory.chat_memory.messages.append(HumanMessage(content=input))
                     memory.chat_memory.messages.append(
                         AIMessage(
-                            content="Hello! I'm an AI assistant. I can help you with questions and have conversations."
+                            content="Hello! I'm an AI assistant. I can help you "
+                            "with questions and have conversations."
                         )
                     )
-                return "Hello! I'm an AI assistant. I can help you with questions and have conversations."
+                return ("Hello! I'm an AI assistant. I can help you with "
+                        "questions and have conversations.")
 
             mock_conv_instance.predict = mock_predict
             return mock_conv_instance
@@ -154,9 +156,22 @@ def mock_openai_for_tests():
 
                     # Generate different responses based on question
                     if "machine learning" in question.lower():
-                        answer = "Machine Learning (ML) is a subset of AI that focuses on algorithms that improve automatically through experience. There are three main types: supervised learning, unsupervised learning, and reinforcement learning."
+                        answer = (
+                            "Machine Learning (ML) is a subset of AI that "
+                            "focuses on algorithms that improve automatically "
+                            "through experience. There are three main types: "
+                            "supervised learning, unsupervised learning, and "
+                            "reinforcement learning."
+                        )
                     else:
-                        answer = "Artificial Intelligence (AI) is a fascinating field that aims to create intelligent machines. These machines can perform tasks that typically require human intelligence, such as learning from experience, recognizing patterns, making decisions, and understanding natural language."
+                        answer = (
+                            "Artificial Intelligence (AI) is a fascinating "
+                            "field that aims to create intelligent machines. "
+                            "These machines can perform tasks that typically "
+                            "require human intelligence, such as learning from "
+                            "experience, recognizing patterns, making decisions, "
+                            "and understanding natural language."
+                        )
 
                     memory.chat_memory.messages.append(AIMessage(content=answer))
 
@@ -165,17 +180,28 @@ def mock_openai_for_tests():
                         "source_documents": [
                             Mock(
                                 metadata={"source": "ai_document.txt", "chunk_id": 0},
-                                page_content="Artificial Intelligence (AI) is a fascinating field that aims to create intelligent machines.",
+                                page_content=(
+                                    "Artificial Intelligence (AI) is a "
+                                    "fascinating field that aims to create "
+                                    "intelligent machines."
+                                ),
                             ),
                             Mock(
                                 metadata={"source": "ai_document.txt", "chunk_id": 1},
-                                page_content="Machine Learning (ML) is a subset of AI that focuses on algorithms that improve automatically through experience.",
+                                page_content=(
+                                    "Machine Learning (ML) is a subset of AI "
+                                    "that focuses on algorithms that improve "
+                                    "automatically through experience."
+                                ),
                             ),
                         ],
                     }
                 else:
                     return {
-                        "answer": "I don't have access to memory to store this conversation.",
+                        "answer": (
+                            "I don't have access to memory to store "
+                            "this conversation."
+                        ),
                         "source_documents": [],
                     }
 
